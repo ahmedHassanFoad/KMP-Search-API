@@ -1,0 +1,6 @@
+@KMPSearch.API_HostAddress = http://localhost:5122
+
+GET {{KMPSearch.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

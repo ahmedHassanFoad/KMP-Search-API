@@ -1,0 +1,227 @@
+### KMP Search API - Sample Requests
+### Base URL: http://localhost:5082
+
+###################################
+### 1. HEALTH CHECK
+###################################
+
+### Health check
+GET http://localhost:5082/api/health
+Content-Type: application/json
+
+###################################
+### 2. FULL-TEXT SEARCH
+###################################
+
+### Basic search - "annual report"
+POST http://localhost:5082/api/v1/search
+Content-Type: application/json
+
+{
+  "query": "annual report",
+  "page": 1,
+  "pageSize": 10
+}
+
+###
+
+### Search with category filter - Finance
+POST http://localhost:5082/api/v1/search
+Content-Type: application/json
+
+{
+  "query": "budget",
+  "filters": {
+    "categories": ["Finance"]
+  },
+  "page": 1,
+  "pageSize": 20
+}
+
+###
+
+### Search with date range filter
+POST http://localhost:5082/api/v1/search
+Content-Type: application/json
+
+{
+  "query": "policy",
+  "filters": {
+    "dateRange": {
+      "from": "2024-01-01",
+      "to": "2024-12-31"
+    }
+  },
+  "sort": {
+    "field": "date",
+    "order": "desc"
+  },
+  "page": 1,
+  "pageSize": 10
+}
+
+###
+
+### Search with multiple filters
+POST http://localhost:5082/api/v1/search
+Content-Type: application/json
+
+{
+  "query": "security",
+  "filters": {
+    "categories": ["IT", "Legal"],
+    "tags": ["compliance"]
+  },
+  "sort": {
+    "field": "relevance",
+    "order": "desc"
+  },
+  "page": 1,
+  "pageSize": 20
+}
+
+###
+
+### Search sorted by title (A-Z)
+POST http://localhost:5082/api/v1/search
+Content-Type: application/json
+
+{
+  "query": "",
+  "sort": {
+    "field": "title",
+    "order": "asc"
+  },
+  "page": 1,
+  "pageSize": 20
+}
+
+###
+
+### Search sorted by date (newest first)
+POST http://localhost:5082/api/v1/search
+Content-Type: application/json
+
+{
+  "query": "",
+  "sort": {
+    "field": "date",
+    "order": "desc"
+  },
+  "page": 1,
+  "pageSize": 15
+}
+
+###
+
+### Search with tags filter
+POST http://localhost:5082/api/v1/search
+Content-Type: application/json
+
+{
+  "query": "",
+  "filters": {
+    "tags": ["annual", "2024"]
+  },
+  "sort": {
+    "field": "date",
+    "order": "desc"
+  },
+  "page": 1,
+  "pageSize": 10
+}
+
+###
+
+### Search for "compliance"
+POST http://localhost:5082/api/v1/search
+Content-Type: application/json
+
+{
+  "query": "compliance",
+  "page": 1,
+  "pageSize": 20
+}
+
+###
+
+### Search for "planning"
+POST http://localhost:5082/api/v1/search
+Content-Type: application/json
+
+{
+  "query": "planning",
+  "filters": {
+    "categories": ["Finance", "Operations"]
+  },
+  "page": 1,
+  "pageSize": 10
+}
+
+###
+
+### Pagination - Page 2
+POST http://localhost:5082/api/v1/search
+Content-Type: application/json
+
+{
+  "query": "",
+  "sort": {
+    "field": "date",
+    "order": "desc"
+  },
+  "page": 2,
+  "pageSize": 10
+}
+
+###
+
+###################################
+### 3. AUTOCOMPLETE SUGGESTIONS
+###################################
+
+### Get suggestions for "ann"
+GET http://localhost:5082/api/v1/search/suggestions?q=ann&limit=10
+Content-Type: application/json
+
+###
+
+### Get suggestions for "bud"
+GET http://localhost:5082/api/v1/search/suggestions?q=bud&limit=5
+Content-Type: application/json
+
+###
+
+### Get suggestions for "pol"
+GET http://localhost:5082/api/v1/search/suggestions?q=pol&limit=10
+Content-Type: application/json
+
+###
+
+### Get suggestions for "sec"
+GET http://localhost:5082/api/v1/search/suggestions?q=sec&limit=10
+Content-Type: application/json
+
+###
+
+### Get suggestions for "comp"
+GET http://localhost:5082/api/v1/search/suggestions?q=comp&limit=10
+Content-Type: application/json
+
+###
+
+### Get suggestions for "quart"
+GET http://localhost:5082/api/v1/search/suggestions?q=quart&limit=10
+Content-Type: application/json
+
+###
+
+###################################
+### 4. FILTER FACETS
+###################################
+
+### Get all available facets
+GET http://localhost:5082/api/v1/search/facets
+Content-Type: application/json
+
+###

@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="KMPSearch.API/KMPSearch.API.csproj" />
+  <Project Path="KMPSearch.Application/KMPSearch.Application.csproj" />
+  <Project Path="KMPSearch.Domain/KMPSearch.Domain.csproj" />
+  <Project Path="KMPSearch.Infrastructure/KMPSearch.Infrastructure.csproj" />
+</Solution>
