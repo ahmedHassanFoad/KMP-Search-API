@@ -20,6 +20,15 @@ Full-text search microservice for the Knowledge Management Platform (KMP) provid
 - **Highlighting** - Search term highlighting in results with `<em>` tags
 - **Relevance Scoring** - Results ranked by relevance score (0-1)
 
+## 📁 Testing Documentation
+
+Complete test suite included:
+- **Postman Collection** - `KMP-Search-API.postman_collection.json` (31 requests, 42 assertions)
+- **Test Results** - `POSTMAN_TEST_RESULTS.md` (detailed execution report)
+- **HTTP Requests** - `TEST_REQUESTS.http` (VS Code REST Client)
+- **CURL Commands** - `CURL_COMMANDS.txt` (Windows PowerShell)
+- **Test Scenarios** - `TEST_SCENARIOS.md` (20 complete scenarios)
+
 ## 🏗️ Architecture
 
 Clean Architecture with 4 layers:
@@ -193,6 +202,36 @@ The seed script includes:
 ### Using HTTP file
 
 Open `KMPSearch.http` in VS Code with REST Client extension and send requests directly.
+
+### Using Postman Collection
+
+The repository includes a complete Postman collection with 31 pre-configured test requests and automated assertions.
+
+**Import Collection:**
+1. Open Postman (Desktop or Web)
+2. Click **Import** → Select `KMP-Search-API.postman_collection.json`
+3. Collection appears in your workspace
+
+**Run All Tests:**
+1. Click on collection name
+2. Click **Run** button
+3. Click **Run KMP Search API**
+4. View automated test results (42 assertions)
+
+**What's Included:**
+- ✅ Health check endpoint
+- ✅ Basic search (3 requests)
+- ✅ Filtered search (5 requests)
+- ✅ Sorting options (5 requests)
+- ✅ Pagination (3 requests)
+- ✅ Boolean operators (5 requests)
+- ✅ Autocomplete suggestions (4 requests)
+- ✅ Facets endpoint (1 request)
+- ✅ Error handling (2 requests)
+- ✅ Example responses saved
+- ✅ Test scripts with assertions
+
+**Test Results:** See [POSTMAN_TEST_RESULTS.md](POSTMAN_TEST_RESULTS.md) for detailed test execution report with expected responses and performance metrics.
 
 ### Sample Test Scenarios
 
