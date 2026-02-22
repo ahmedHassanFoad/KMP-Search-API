@@ -27,7 +27,7 @@ namespace KMPSearch.Infrastructure.Persistence.Migrations
                     ON DocumentCatalog
                     WITH CHANGE_TRACKING AUTO;
                 END
-            ");
+            ", suppressTransaction: true);
         }
 
         /// <inheritdoc />
@@ -39,7 +39,7 @@ namespace KMPSearch.Infrastructure.Persistence.Migrations
                 BEGIN
                     DROP FULLTEXT INDEX ON Documents;
                 END
-            ");
+            ", suppressTransaction: true);
 
             // Drop Full-Text Catalog (must be outside transaction)
             migrationBuilder.Sql(@"

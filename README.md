@@ -25,8 +25,6 @@ Full-text search microservice for the Knowledge Management Platform (KMP) provid
 Complete test suite included:
 - **Postman Collection** - `KMP-Search-API.postman_collection.json` (31 requests, 42 assertions)
 - **Test Results** - `POSTMAN_TEST_RESULTS.md` (detailed execution report)
-- **HTTP Requests** - `TEST_REQUESTS.http` (VS Code REST Client)
-- **CURL Commands** - `CURL_COMMANDS.txt` (Windows PowerShell)
 - **Test Scenarios** - `TEST_SCENARIOS.md` (20 complete scenarios)
 
 ## 🏗️ Architecture
@@ -52,12 +50,36 @@ KMP-Search/
 ## 📋 Prerequisites
 
 - [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-- SQL Server (LocalDB, Express, or full instance)
+- SQL Server (LocalDB, Express, or full instance) **with Full-Text Search feature installed**
 - SQL Server Management Studio (optional, for running seed script)
+- sqlcmd command-line tool (included with SQL Server)
 
 ## 🚀 Setup Instructions
 
-### Option A: Using EF Core Migrations (Recommended)
+### ⚠️ Important: Verify Full-Text Search (FTS) is Installed
+
+Before proceeding, verify SQL Server has Full-Text Search installed:
+
+```sql
+-- Run this query in SSMS or sqlcmd
+SELECT SERVERPROPERTY('IsFullTextInstalled') AS IsFullTextInstalled;
+-- Result should be 1 (installed)
+```
+
+**If FTS is not installed:**
+1. Run SQL Server Installation Center
+2. Choose "Installation" → "New SQL Server stand-alone installation"
+3. Select "Add features to an existing instance"
+4. Check **"Full-Text and Semantic Extractions for Search"**
+5. Complete installation wizard
+
+### 📍 SQL Server Instance Note
+
+The default connection string uses the **default SQL Server instance** (Server=`.`):
+- If you're using a **named instance** like `DESKTOP-XXX\SQLEXPRESS`, update the connection string in `appsettings.json`
+- To find your instance name, run: `sqlcmd -L`
+
+### Setup Approach (EF Core Migrations + SQL Seed Script)
 
 1. **Clone/Download the repository**
    ```bash
@@ -77,20 +99,44 @@ KMP-Search/
      "DefaultConnection": "Server=.;Database=KMPSearchDb;..."
    }
    ```
+   
+   **For named instances** (e.g., SQL Express):
+   ```json
+   "DefaultConnection": "Server=.\\SQLEXPRESS;Database=KMPSearchDb;..."
+   ```
 
-4. **Apply migrations (creates database)**
+4. **Apply migrations (creates database schema with Full-Text Search)**
    ```bash
    dotnet ef database update --project KMPSearch.Infrastructure --startup-project KMPSearch.API
    ```
-
-5. **Seed the database**
    
-   Run the seed script using sqlcmd or SSMS:
+   This creates:
+   - Database tables (Departments, Documents, SearchQueries)
+   - Indexes for optimized queries
+   - **Full-Text Catalog** (DocumentCatalog)
+   - **Full-Text Index** on Documents (Title, Description, Tags)
+   
+   ⚠️ **Note:** The Full-Text Index creation uses `suppressTransaction: true` because SQL Server doesn't allow FTS operations inside transactions.
+
+5. **Seed the database with test data**
+   
+   Run the seed script using sqlcmd:
    ```bash
    sqlcmd -S . -d KMPSearchDb -i SeedDatabase.sql
    ```
    
-   Or using SSMS: Open `SeedDatabase.sql` and execute against KMPSearchDb
+   Or using SSMS: Open `SeedDatabase.sql` and execute against KMPSearchDb.
+   
+   This populates:
+   - 5 Departments (IT, HR, Finance, Operations, Legal)
+   - 26 Documents with realistic content
+   - 10 Pre-seeded search queries for autocomplete
+   
+   **Why SQL script instead of EF migration?**
+   - Easier to maintain and modify test data
+   - Can be re-run to reset data
+   - Avoids bloating migration files with seed data
+   - Better separation of schema (migrations) vs data (scripts)
 
 6. **Run the application**
    ```bash
@@ -101,14 +147,48 @@ KMP-Search/
    
    Open browser: [http://localhost:5082/swagger](http://localhost:5082/swagger)
 
-### Option B: Using Standalone SQL Script
+### Verifying Full-Text Search is Working
 
-1. **Create database and run seed script**
-   ```bash
-   sqlcmd -S . -i SeedDatabase.sql
-   ```
+After setup, verify FTS is operational:
 
-2. **Follow steps 1, 2, 6, and 7 from Option A**
+```sql
+-- 1. Check Full-Text Catalog exists
+SELECT name, is_default FROM sys.fulltext_catalogs;
+-- Expected: DocumentCatalog (is_default = 1)
+
+-- 2. Check Full-Text Index on Documents table
+SELECT 
+    OBJECT_NAME(object_id) AS TableName,
+    name AS IndexName
+FROM sys.fulltext_indexes;
+-- Expected: Documents table with FT index
+
+-- 3. Test FTS query
+USE KMPSearchDb;
+SELECT Title, Description 
+FROM Documents 
+WHERE CONTAINS((Title, Description, Tags), 'security');
+-- Should return documents with 'security' in content
+```
+
+### Troubleshooting Full-Text Search
+
+**Error: "CREATE FULLTEXT INDEX statement cannot be used inside a user transaction"**
+- ✅ Already fixed - Migration uses `suppressTransaction: true`
+- If you see this, ensure you're using the latest migration files
+
+**No results from FTS queries:**
+- Wait a few seconds after seeding for FTS indexing to complete
+- Check index population status:
+  ```sql
+  SELECT OBJECTPROPERTY(OBJECT_ID('Documents'), 'TableFullTextPopulateStatus');
+  -- 0 = Idle (ready), 1 = Full population in progress
+  ```
+
+**Database not visible in SSMS:**
+- You may be connected to a **different SQL Server instance**
+- The database is on the instance specified in connection string (default: `.`)
+- In SSMS, connect to the correct instance (use Server name from connection string)
 
 ## 🔌 API Endpoints
 
@@ -231,7 +311,6 @@ The repository includes a complete Postman collection with 31 pre-configured tes
 - ✅ Example responses saved
 - ✅ Test scripts with assertions
 
-**Test Results:** See [POSTMAN_TEST_RESULTS.md](POSTMAN_TEST_RESULTS.md) for detailed test execution report with expected responses and performance metrics.
 
 ### Sample Test Scenarios
 
@@ -265,31 +344,60 @@ The repository includes a complete Postman collection with 31 pre-configured tes
 
 ## 🔍 Search Implementation
 
-The service uses **SQL Server LIKE queries** with optimizations:
+The service uses **SQL Server Full-Text Search (FTS)** for optimized, enterprise-grade search:
 
-- Case-insensitive search
-- Partial word matching
-- Search across title, description, and tags
-- Simple relevance scoring:
-  - Title match: +10 points
-  - Description match: +5 points
-  - Tag match: +3 points
+### Full-Text Search Features
+- **CONTAINSTABLE** queries for relevance-ranked results
+- **Automatic index maintenance** with CHANGE_TRACKING AUTO
+- **Multi-column search** across Title, Description, and Tags
+- **Language-aware indexing** (LANGUAGE 1033 = US English)
+- **Word and phrase matching** with natural language processing
+- **Relevance scoring** (0.0 to 1.0) based on term frequency and proximity
 
-**Future Enhancement:** 
-The database is structured to support SQL Server Full-Text Search (FTS). To enable:
+### Search Architecture
 
-```sql
--- Create full-text catalog
-CREATE FULLTEXT CATALOG DocumentSearchCatalog AS DEFAULT;
+**Full-Text Catalog:** `DocumentCatalog`
+- Default catalog for all FTS indexes
+- Automatically managed by SQL Server
 
--- Create full-text index
-CREATE FULLTEXT INDEX ON Documents(Title, Description)
-KEY INDEX PK_Documents
-ON DocumentSearchCatalog
-WITH CHANGE_TRACKING AUTO;
+**Full-Text Index:** On `Documents` table
+- Indexed columns: Title, Description, Tags
+- Key Index: Primary key (Id)
+- Update method: Automatic change tracking
+
+### Search Query Processing
+
+```csharp
+// Simplified from SearchService.cs
+var ftsQuery = BuildFtsQuery(searchTerm); // e.g., "security AND policy"
+
+var results = await context.Documents
+    .FromSqlRaw(@"
+        SELECT d.*, ft.RANK
+        FROM Documents d
+        INNER JOIN CONTAINSTABLE(Documents, (Title, Description, Tags), {0}) AS ft
+        ON d.Id = ft.[KEY]
+        WHERE d.IsDeleted = 0
+    ", ftsQuery)
+    .ToListAsync();
 ```
 
-Then update `SearchService.cs` to use `CONTAINSTABLE` or `FREETEXTTABLE` for better relevance ranking.
+### Supported Search Operators
+
+- **AND:** `security AND policy`
+- **OR:** `budget OR financial`
+- **NOT:** `annual NOT report`
+- **Phrase:** `"employee handbook"`
+- **Prefix:** `secur*` (matches security, secure, etc.)
+- **NEAR:** `annual NEAR report` (words close together)
+
+### Search Query Tracking
+
+All searches are automatically tracked in `SearchQueries` table:
+- Increments `SearchCount` for existing queries
+- Updates `LastSearchedAt` timestamp
+- Powers autocomplete suggestions
+- Enables search analytics
 
 ## 📝 Project Structure
 
@@ -360,22 +468,59 @@ KMP-Search/
 
 For production deployment:
 
-1. **Update connection string** - Use secure credentials
+1. **Update connection string** - Use secure credentials (not Windows Auth)
 2. **Enable HTTPS** - Configure SSL certificates
 3. **Add authentication** - Implement JWT/OAuth if required
-4. **Configure logging** - Add Serilog or similar
-5. **Enable CORS** - If consumed by web clients
+4. **Configure logging** - Add Serilog or Application Insights
+5. **Enable CORS** - If consumed by web clients from different domains
 6. **Add rate limiting** - Prevent API abuse
-7. **Enable FTS** - For better search performance
-8. **Add caching** - Redis for search results/facets
+7. **Verify FTS is installed** - Required for search functionality
+8. **Add caching** - Redis for search results/facets/autocomplete
+9. **Monitor FTS performance** - Use SQL Server Query Store
+10. **Schedule FTS index optimization** - Periodic REORGANIZE/REBUILD for large datasets
+
+### Full-Text Search Production Setup
+
+**Index Optimization:**
+```sql
+-- Reorganize FTS index (online operation)
+ALTER FULLTEXT INDEX ON Documents START INCREMENTAL POPULATION;
+
+-- Full index rebuild (for major changes)
+ALTER FULLTEXT INDEX ON Documents START FULL POPULATION;
+```
+
+**Monitoring Queries:**
+```sql
+-- Check index fragment status
+SELECT * FROM sys.dm_fts_index_keywords(DB_ID('KMPSearchDb'), OBJECT_ID('Documents'));
+
+-- Monitor population status
+SELECT OBJECTPROPERTY(OBJECT_ID('Documents'), 'TableFullTextPopulateStatus');
+```
 
 ## ⚡ Performance Tips
 
-- Indexed fields: Category, DepartmentId, IsDeleted, CreatedAt, QueryText
-- Page size capped at 100
-- Soft deletes (IsDeleted) for data retention
-- Efficient tag storage (comma-separated, converted at app layer)
-- Search query tracking is non-blocking
+- **Full-Text Search enabled** - Uses CONTAINSTABLE for optimized queries
+- **Automatic index updates** - CHANGE_TRACKING AUTO keeps FTS index current
+- **Database indexes** on frequently queried fields:
+  - Category, DepartmentId, IsDeleted, CreatedAt (Documents table)
+  - QueryText, SearchCount (SearchQueries table)
+- **Page size capped at 100** - Prevents excessive data retrieval
+- **Soft deletes** (IsDeleted) for data retention and faster cleanup
+- **Efficient tag storage** - Comma-separated, converted at application layer
+- **Search query tracking** - Non-blocking async operations
+- **FTS catalog auto-managed** - SQL Server handles index optimization
+- **Connection pooling** - EF Core manages database connections efficiently
+
+### FTS Performance Optimization
+
+For large datasets (>100K documents):
+1. **Monitor index fragmentation** - Rebuild if >30% fragmented
+2. **Consider partitioning** - Split Documents table by date/department
+3. **Use stoplist** - Exclude common words (the, a, an) from indexing
+4. **Adjust max query length** - Default 100, increase for complex queries
+5. **Enable query statistics** - Track slow FTS queries via DMVs
 
 ## 🐛 Troubleshooting
 
@@ -383,29 +528,41 @@ For production deployment:
 - Verify SQL Server is running
 - Check connection string in appsettings.json
 - Ensure Windows Authentication is enabled
+- **Verify you're connecting to the correct SQL Server instance:**
+  - Run `sqlcmd -L` to list available instances
+  - If using SQL Express, your instance might be `.\SQLEXPRESS` instead of `.`
+  - Update connection string: `Server=.\SQLEXPRESS;Database=KMPSearchDb;...`
 
-**Migration fails:**
-- Ensure KMPSearchDb database doesn't already exist or drop it first
-- Check SQL Server permissions
+**Database not visible in SSMS Object Explorer:**
+- You may be viewing a **different SQL Server instance**
+- The database exists on the instance in the connection string (check appsettings.json)
+- Example: If connection uses `Server=.` but SSMS is connected to `.\SQLEXPRESS`, you won't see it
+- **Solution:** Connect to the correct instance in SSMS (same as connection string)
+
+**Migration fails with Full-Text error:**
+- Error: "CREATE FULLTEXT INDEX statement cannot be used inside a user transaction"
+- **Solution:** Already fixed in migration - uses `suppressTransaction: true`
+- If still occurring, ensure you have the latest migration files
+- Verify Full-Text Search is installed: `SELECT SERVERPROPERTY('IsFullTextInstalled')`
+
+**Migration succeeds but Full-Text Search doesn't work:**
+- Check if Full-Text is installed: `SELECT SERVERPROPERTY('IsFullTextInstalled')`
+- If result is 0, install FTS feature via SQL Server setup
+- Verify catalog exists: `SELECT * FROM sys.fulltext_catalogs WHERE name = 'DocumentCatalog'`
+- Verify index exists: `SELECT * FROM sys.fulltext_indexes WHERE object_id = OBJECT_ID('Documents')`
 
 **No search results:**
 - Verify database is seeded (run SeedDatabase.sql)
 - Check IsDeleted = 0 in Documents table
 - Try broader search terms
+- **For FTS:** Wait 10-30 seconds after seeding for index population
+- Check FTS index status: `SELECT OBJECTPROPERTY(OBJECT_ID('Documents'), 'TableFullTextPopulateStatus')`
 
 **Port conflict (5082 in use):**
 - Update port in launchSettings.json
 - Update README examples
 
-## 📄 License
-
-This is a technical assignment project.
-
-## 👥 Contact
-
-For questions or issues, contact the development team.
-
----
 
 **Version:** 1.0.0  
-**Last Updated:** February 21, 2026
+**Last Updated:** February 22, 2026  
+**Full-Text Search:** Enabled ✅

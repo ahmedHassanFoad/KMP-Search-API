@@ -159,8 +159,18 @@ public class SearchService : ISearchService
             {
                 for (int i = 0; i < request.Filters.Tags.Length; i++)
                 {
-                    whereConditions.Add($"d.Tags LIKE @tag{i}");
-                    parameters.Add(new SqlParameter($"@tag{i}", $"%{request.Filters.Tags[i]}%"));
+                    var tag = request.Filters.Tags[i];
+                    // Match exact tags in CSV: "tag", "tag,..." or "...,tag" or "...,tag,..."
+                    whereConditions.Add(
+                        $"(d.Tags = @tag{i} OR " +
+                        $"d.Tags LIKE @tagStart{i} OR " +
+                        $"d.Tags LIKE @tagEnd{i} OR " +
+                        $"d.Tags LIKE @tagMiddle{i})"
+                    );
+                    parameters.Add(new SqlParameter($"@tag{i}", tag));                    // Exact match
+                    parameters.Add(new SqlParameter($"@tagStart{i}", $"{tag},%"));        // Starts with
+                    parameters.Add(new SqlParameter($"@tagEnd{i}", $"%,{tag}"));          // Ends with
+                    parameters.Add(new SqlParameter($"@tagMiddle{i}", $"%,{tag},%"));     // In middle
                 }
             }
         }
@@ -297,13 +307,11 @@ public class SearchService : ISearchService
                 }
             }
 
+            // Tag filtering using raw SQL to avoid EF Core value converter issues
             if (request.Filters.Tags != null && request.Filters.Tags.Length > 0)
             {
-                foreach (var tag in request.Filters.Tags)
-                {
-                    var tagToSearch = tag;
-                    query = query.Where(d => d.Tags.Contains(tagToSearch));
-                }
+                var matchingIds = await GetDocumentIdsByTagsAsync(request.Filters.Tags, cancellationToken);
+                query = query.Where(d => matchingIds.Contains(d.Id));
             }
         }
 
@@ -678,8 +686,18 @@ public class SearchService : ISearchService
             {
                 for (int i = 0; i < filters.Tags.Length; i++)
                 {
-                    whereConditions.Add($"d.Tags LIKE @tag{i}");
-                    parameters.Add(new SqlParameter($"@tag{i}", $"%{filters.Tags[i]}%"));
+                    var tag = filters.Tags[i];
+                    // Match exact tags in CSV: "tag", "tag,..." or "...,tag" or "...,tag,..."
+                    whereConditions.Add(
+                        $"(d.Tags = @tag{i} OR " +
+                        $"d.Tags LIKE @tagStart{i} OR " +
+                        $"d.Tags LIKE @tagEnd{i} OR " +
+                        $"d.Tags LIKE @tagMiddle{i})"
+                    );
+                    parameters.Add(new SqlParameter($"@tag{i}", tag));                    // Exact match
+                    parameters.Add(new SqlParameter($"@tagStart{i}", $"{tag},%"));        // Starts with
+                    parameters.Add(new SqlParameter($"@tagEnd{i}", $"%,{tag}"));          // Ends with
+                    parameters.Add(new SqlParameter($"@tagMiddle{i}", $"%,{tag},%"));     // In middle
                 }
             }
         }
@@ -761,11 +779,9 @@ public class SearchService : ISearchService
 
             if (filters.Tags != null && filters.Tags.Length > 0)
             {
-                foreach (var tag in filters.Tags)
-                {
-                    var tagToSearch = tag;
-                    query = query.Where(d => d.Tags.Contains(tagToSearch));
-                }
+                // Tag filtering using raw SQL to avoid EF Core value converter issues
+                var matchingIds = await GetDocumentIdsByTagsAsync(filters.Tags, cancellationToken);
+                query = query.Where(d => matchingIds.Contains(d.Id));
             }
         }
 
@@ -781,6 +797,61 @@ public class SearchService : ISearchService
             .ToListAsync(cancellationToken);
 
         return new SearchFacets { Categories = categories };
+    }
+
+    private async Task<List<Guid>> GetDocumentIdsByTagsAsync(string[] tags, CancellationToken cancellationToken)
+    {
+        // Build SQL WHERE conditions for tag matching (delimiter-aware exact matching)
+        var whereConditions = new List<string> { "IsDeleted = 0" };
+        var parameters = new List<SqlParameter>();
+
+        for (int i = 0; i < tags.Length; i++)
+        {
+            var tag = tags[i];
+            // Match exact tags in CSV: "tag", "tag,..." or "...,tag" or "...,tag,..."
+            whereConditions.Add(
+                $"(Tags = @tag{i} OR " +
+                $"Tags LIKE @tagStart{i} OR " +
+                $"Tags LIKE @tagEnd{i} OR " +
+                $"Tags LIKE @tagMiddle{i})"
+            );
+            parameters.Add(new SqlParameter($"@tag{i}", tag));                    // Exact match
+            parameters.Add(new SqlParameter($"@tagStart{i}", $"{tag},%"));        // Starts with
+            parameters.Add(new SqlParameter($"@tagEnd{i}", $"%,{tag}"));          // Ends with
+            parameters.Add(new SqlParameter($"@tagMiddle{i}", $"%,{tag},%"));     // In middle
+        }
+
+        var whereSql = string.Join(" AND ", whereConditions);
+        var sql = $"SELECT Id FROM Documents WHERE {whereSql}";
+
+        var documentIds = new List<Guid>();
+        var dbContext = (DbContext)_context;
+        var connection = dbContext.Database.GetDbConnection();
+
+        if (connection.State != ConnectionState.Open)
+        {
+            await connection.OpenAsync(cancellationToken);
+        }
+
+        await using (var command = connection.CreateCommand())
+        {
+            command.CommandText = sql;
+            foreach (var param in parameters)
+            {
+                var cmdParam = command.CreateParameter();
+                cmdParam.ParameterName = param.ParameterName;
+                cmdParam.Value = param.Value;
+                command.Parameters.Add(cmdParam);
+            }
+
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                documentIds.Add(reader.GetGuid(0));
+            }
+        }
+
+        return documentIds;
     }
 
     private async Task TrackSearchQueryAsync(string queryText, CancellationToken cancellationToken)
