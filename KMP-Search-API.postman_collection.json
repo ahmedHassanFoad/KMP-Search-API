@@ -1,0 +1,1229 @@
+{
+	"info": {
+		"_postman_id": "kmp-search-api-2026",
+		"name": "KMP Search API - Complete Test Collection",
+		"description": "Comprehensive test collection for KMP Search API with FTS implementation. Includes all endpoints, filters, sorting, pagination, and advanced scenarios.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "1"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Health Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"API is healthy\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql(\"Healthy\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check if the API is running and healthy"
+					},
+					"response": [
+						{
+							"name": "Healthy Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:5082/api/health",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "5082",
+									"path": [
+										"api",
+										"health"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"Healthy\",\n    \"timestamp\": \"2026-02-21T18:30:00Z\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Search - Basic",
+			"item": [
+				{
+					"name": "Search for 'report'",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has results\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.results).to.be.an('array');",
+									"    pm.expect(jsonData.results.length).to.be.greaterThan(0);",
+									"});",
+									"",
+									"pm.test(\"Results have highlights\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.results[0].highlights).to.exist;",
+									"    pm.expect(jsonData.results[0].highlights.title).to.include('<em>');",
+									"});",
+									"",
+									"pm.test(\"Pagination exists\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.pagination).to.exist;",
+									"    pm.expect(jsonData.pagination.totalResults).to.be.greaterThan(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"report\",\n  \"page\": 1,\n  \"pageSize\": 5\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search"
+							]
+						},
+						"description": "Basic full-text search for documents containing 'report'"
+					},
+					"response": [
+						{
+							"name": "Search Results",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"query\": \"report\",\n  \"page\": 1,\n  \"pageSize\": 5\n}"
+								},
+								"url": {
+									"raw": "http://localhost:5082/api/v1/search",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "5082",
+									"path": [
+										"api",
+										"v1",
+										"search"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "X-Total-Count",
+									"value": "8"
+								},
+								{
+									"key": "X-Page",
+									"value": "1"
+								},
+								{
+									"key": "X-Page-Size",
+									"value": "5"
+								},
+								{
+									"key": "X-Total-Pages",
+									"value": "2"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"results\": [\n        {\n            \"id\": \"2b6d896f-0890-4b49-a2e3-0a5fe4c7ff99\",\n            \"title\": \"Q4 Budget Report 2024\",\n            \"description\": \"Quarterly budget report for Q4 2024 showing budget vs actual spending across all departments.\",\n            \"category\": \"Finance\",\n            \"tags\": [\"quarterly\", \"budget\", \"report\", \"Q4\", \"2024\"],\n            \"departmentName\": \"Finance\",\n            \"createdAt\": \"2026-01-21T17:24:37.34\",\n            \"highlights\": {\n                \"title\": \"Q4 Budget <em>Report</em> 2024\",\n                \"description\": \"Quarterly budget <em>report</em> for Q4 2024 showing budget vs actual spending across all departments.\"\n            },\n            \"score\": 0.032\n        },\n        {\n            \"id\": \"59b11453-7e4d-4fbd-be85-10b4366637c6\",\n            \"title\": \"Tax Compliance Report 2023\",\n            \"description\": \"Annual tax compliance report detailing tax obligations, filings, and compliance status.\",\n            \"category\": \"Finance\",\n            \"tags\": [\"tax\", \"compliance\", \"annual\", \"report\", \"2023\"],\n            \"departmentName\": \"Finance\",\n            \"createdAt\": \"2025-02-21T17:24:37.34\",\n            \"highlights\": {\n                \"title\": \"Tax Compliance <em>Report</em> 2023\",\n                \"description\": \"Annual tax compliance <em>report</em> detailing tax obligations, filings, and compliance status.\"\n            },\n            \"score\": 0.032\n        }\n    ],\n    \"pagination\": {\n        \"page\": 1,\n        \"pageSize\": 5,\n        \"totalResults\": 8,\n        \"totalPages\": 2\n    },\n    \"facets\": {\n        \"categories\": [\n            {\"value\": \"Finance\", \"count\": 3},\n            {\"value\": \"Legal\", \"count\": 2},\n            {\"value\": \"HR\", \"count\": 2},\n            {\"value\": \"IT\", \"count\": 1}\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Search with partial match 'bud'",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Results contain 'budget'\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var found = jsonData.results.some(r => ",
+									"        r.title.toLowerCase().includes('budget') || ",
+									"        (r.description && r.description.toLowerCase().includes('budget'))",
+									"    );",
+									"    pm.expect(found).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"bud\",\n  \"page\": 1,\n  \"pageSize\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search"
+							]
+						},
+						"description": "Test partial word matching - 'bud' should match 'budget'"
+					},
+					"response": []
+				},
+				{
+					"name": "Empty search (all documents)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"page\": 1,\n  \"pageSize\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search"
+							]
+						},
+						"description": "Retrieve all documents without search query"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Search - Filtered",
+			"item": [
+				{
+					"name": "Filter by Finance category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"All results are Finance category\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var allFinance = jsonData.results.every(r => r.category === 'Finance');",
+									"    pm.expect(allFinance).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"policy\",\n  \"filters\": {\n    \"categories\": [\"Finance\"]\n  },\n  \"page\": 1,\n  \"pageSize\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search"
+							]
+						},
+						"description": "Search with category filter applied"
+					},
+					"response": []
+				},
+				{
+					"name": "Filter by multiple categories",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"report\",\n  \"filters\": {\n    \"categories\": [\"Finance\", \"HR\"]\n  },\n  \"page\": 1,\n  \"pageSize\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search"
+							]
+						},
+						"description": "Filter by multiple categories (OR logic)"
+					},
+					"response": []
+				},
+				{
+					"name": "Filter by date range",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"report\",\n  \"filters\": {\n    \"dateRange\": {\n      \"from\": \"2025-01-01\",\n      \"to\": \"2026-12-31\"\n    }\n  },\n  \"page\": 1,\n  \"pageSize\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search"
+							]
+						},
+						"description": "Filter by date range (from/to)"
+					},
+					"response": []
+				},
+				{
+					"name": "Filter by tags",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"filters\": {\n    \"tags\": [\"annual\", \"2024\"]\n  },\n  \"page\": 1,\n  \"pageSize\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search"
+							]
+						},
+						"description": "Filter by multiple tags (AND logic)"
+					},
+					"response": []
+				},
+				{
+					"name": "Complex multi-filter query",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"report\",\n  \"filters\": {\n    \"categories\": [\"Finance\", \"Legal\"],\n    \"tags\": [\"annual\"],\n    \"dateRange\": {\n      \"from\": \"2025-01-01\",\n      \"to\": \"2026-12-31\"\n    }\n  },\n  \"sort\": {\n    \"field\": \"relevance\",\n    \"order\": \"desc\"\n  },\n  \"page\": 1,\n  \"pageSize\": 20\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search"
+							]
+						},
+						"description": "Combine all filter types (category + tags + date range)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Search - Sorting",
+			"item": [
+				{
+					"name": "Sort by relevance (default)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"budget\",\n  \"sort\": {\n    \"field\": \"relevance\",\n    \"order\": \"desc\"\n  },\n  \"page\": 1,\n  \"pageSize\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search"
+							]
+						},
+						"description": "Sort results by relevance score (highest first)"
+					},
+					"response": []
+				},
+				{
+					"name": "Sort by date (newest first)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"annual\",\n  \"sort\": {\n    \"field\": \"date\",\n    \"order\": \"desc\"\n  },\n  \"page\": 1,\n  \"pageSize\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search"
+							]
+						},
+						"description": "Sort by creation date (newest first)"
+					},
+					"response": []
+				},
+				{
+					"name": "Sort by date (oldest first)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"policy\",\n  \"sort\": {\n    \"field\": \"date\",\n    \"order\": \"asc\"\n  },\n  \"page\": 1,\n  \"pageSize\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search"
+							]
+						},
+						"description": "Sort by creation date (oldest first)"
+					},
+					"response": []
+				},
+				{
+					"name": "Sort by title (A-Z)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"report\",\n  \"sort\": {\n    \"field\": \"title\",\n    \"order\": \"asc\"\n  },\n  \"page\": 1,\n  \"pageSize\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search"
+							]
+						},
+						"description": "Sort alphabetically by title (A-Z)"
+					},
+					"response": []
+				},
+				{
+					"name": "Sort by title (Z-A)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"compliance\",\n  \"sort\": {\n    \"field\": \"title\",\n    \"order\": \"desc\"\n  },\n  \"page\": 1,\n  \"pageSize\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search"
+							]
+						},
+						"description": "Sort alphabetically by title (Z-A)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Search - Pagination",
+			"item": [
+				{
+					"name": "Page 1 (5 per page)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Pagination metadata correct\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.pagination.page).to.eql(1);",
+									"    pm.expect(jsonData.pagination.pageSize).to.eql(5);",
+									"});",
+									"",
+									"pm.test(\"X-Total-Count header exists\", function () {",
+									"    pm.response.to.have.header('X-Total-Count');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"annual\",\n  \"page\": 1,\n  \"pageSize\": 5\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search"
+							]
+						},
+						"description": "Get first page with 5 results"
+					},
+					"response": []
+				},
+				{
+					"name": "Page 2 (5 per page)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"annual\",\n  \"page\": 2,\n  \"pageSize\": 5\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search"
+							]
+						},
+						"description": "Get second page with 5 results"
+					},
+					"response": []
+				},
+				{
+					"name": "Large page size (100)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"\",\n  \"page\": 1,\n  \"pageSize\": 100\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search"
+							]
+						},
+						"description": "Performance test with large page size"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Search - Boolean Operators",
+			"item": [
+				{
+					"name": "AND operator",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"budget AND planning\",\n  \"page\": 1,\n  \"pageSize\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search"
+							]
+						},
+						"description": "Both terms must be present (FTS AND operator)"
+					},
+					"response": []
+				},
+				{
+					"name": "OR operator",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"finance OR budget\",\n  \"page\": 1,\n  \"pageSize\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search"
+							]
+						},
+						"description": "Either term can be present (FTS OR operator)"
+					},
+					"response": []
+				},
+				{
+					"name": "NEAR operator",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"annual NEAR report\",\n  \"page\": 1,\n  \"pageSize\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search"
+							]
+						},
+						"description": "Terms must be close to each other (FTS NEAR operator)"
+					},
+					"response": []
+				},
+				{
+					"name": "Complex boolean expression",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"(budget OR planning) AND 2024\",\n  \"page\": 1,\n  \"pageSize\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search"
+							]
+						},
+						"description": "Combine multiple boolean operators with parentheses"
+					},
+					"response": []
+				},
+				{
+					"name": "ANDNOT operator (exclude)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"report ANDNOT budget\",\n  \"page\": 1,\n  \"pageSize\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search"
+							]
+						},
+						"description": "Exclude documents containing specific term"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Autocomplete Suggestions",
+			"item": [
+				{
+					"name": "Suggestions for 'bud'",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Suggestions returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.suggestions).to.be.an('array');",
+									"    pm.expect(jsonData.suggestions.length).to.be.greaterThan(0);",
+									"});",
+									"",
+									"pm.test(\"Suggestions have required fields\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var first = jsonData.suggestions[0];",
+									"    pm.expect(first.text).to.exist;",
+									"    pm.expect(first.type).to.exist;",
+									"    pm.expect(first.count).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1/search/suggestions?q=bud&limit=5",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search",
+								"suggestions"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "bud"
+								},
+								{
+									"key": "limit",
+									"value": "5"
+								}
+							]
+						},
+						"description": "Get autocomplete suggestions for 'bud'"
+					},
+					"response": [
+						{
+							"name": "Budget Suggestions",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:5082/api/v1/search/suggestions?q=bud&limit=5",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "5082",
+									"path": [
+										"api",
+										"v1",
+										"search",
+										"suggestions"
+									],
+									"query": [
+										{
+											"key": "q",
+											"value": "bud"
+										},
+										{
+											"key": "limit",
+											"value": "5"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"suggestions\": [\n        {\n            \"text\": \"budget\",\n            \"type\": \"query\",\n            \"count\": 32\n        },\n        {\n            \"text\": \"budget\",\n            \"type\": \"tag\",\n            \"count\": 3\n        },\n        {\n            \"text\": \"Q4 Budget Report 2024\",\n            \"type\": \"title\",\n            \"count\": 1\n        },\n        {\n            \"text\": \"Network Infrastructure Budget 2025\",\n            \"type\": \"title\",\n            \"count\": 1\n        },\n        {\n            \"text\": \"Corporate Budget Planning 2025\",\n            \"type\": \"title\",\n            \"count\": 1\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Suggestions for 'ann'",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1/search/suggestions?q=ann&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search",
+								"suggestions"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "ann"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Get autocomplete suggestions for 'ann' (matches 'annual')"
+					},
+					"response": []
+				},
+				{
+					"name": "Suggestions for 'comp'",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1/search/suggestions?q=comp&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search",
+								"suggestions"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "comp"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Get autocomplete suggestions for 'comp' (matches 'compliance')"
+					},
+					"response": []
+				},
+				{
+					"name": "Suggestions for 'sec'",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1/search/suggestions?q=sec&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search",
+								"suggestions"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "sec"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Get autocomplete suggestions for 'sec' (matches 'security')"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Facets",
+			"item": [
+				{
+					"name": "Get all facets",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Facets have all sections\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.categories).to.be.an('array');",
+									"    pm.expect(jsonData.departments).to.be.an('array');",
+									"    pm.expect(jsonData.tags).to.be.an('array');",
+									"    pm.expect(jsonData.dateRange).to.exist;",
+									"});",
+									"",
+									"pm.test(\"Categories have counts\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.categories[0].count).to.be.greaterThan(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1/search/facets",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search",
+								"facets"
+							]
+						},
+						"description": "Get all available filter facets with counts"
+					},
+					"response": [
+						{
+							"name": "Facets Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:5082/api/v1/search/facets",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "5082",
+									"path": [
+										"api",
+										"v1",
+										"search",
+										"facets"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"categories\": [\n        {\"value\": \"Finance\", \"count\": 6},\n        {\"value\": \"HR\", \"count\": 6},\n        {\"value\": \"Legal\", \"count\": 5},\n        {\"value\": \"Operations\", \"count\": 5},\n        {\"value\": \"IT\", \"count\": 4},\n        {\"value\": \"Engineering\", \"count\": 1}\n    ],\n    \"departments\": [\n        {\n            \"id\": \"c74fca08-a5e7-4134-a8a9-d7be88faebc6\",\n            \"name\": \"Human Resources\",\n            \"count\": 6\n        },\n        {\n            \"id\": \"dcfb103e-e67b-412d-874b-ded38bb8f5cb\",\n            \"name\": \"Finance\",\n            \"count\": 6\n        },\n        {\n            \"id\": \"742ee76d-80ae-4261-8dda-e03f7022ae47\",\n            \"name\": \"Legal\",\n            \"count\": 5\n        },\n        {\n            \"id\": \"92ae23f3-ab4f-47b4-933f-701fae38ee60\",\n            \"name\": \"Operations\",\n            \"count\": 5\n        },\n        {\n            \"id\": \"734761ce-6722-45c6-b8b3-844476ff46a6\",\n            \"name\": \"Information Technology\",\n            \"count\": 5\n        }\n    ],\n    \"tags\": [\n        {\"value\": \"annual\", \"count\": 12},\n        {\"value\": \"2024\", \"count\": 10},\n        {\"value\": \"policy\", \"count\": 9},\n        {\"value\": \"report\", \"count\": 8},\n        {\"value\": \"compliance\", \"count\": 5},\n        {\"value\": \"planning\", \"count\": 5},\n        {\"value\": \"quarterly\", \"count\": 4},\n        {\"value\": \"guidelines\", \"count\": 4},\n        {\"value\": \"budget\", \"count\": 3}\n    ],\n    \"dateRange\": {\n        \"min\": \"2025-02-21T17:24:37.32\",\n        \"max\": \"2026-02-21T17:24:37.37\"\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Error Handling",
+			"item": [
+				{
+					"name": "Invalid suggestions query (empty q)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Error message exists\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.error).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1/search/suggestions?q=&limit=5",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search",
+								"suggestions"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": ""
+								},
+								{
+									"key": "limit",
+									"value": "5"
+								}
+							]
+						},
+						"description": "Test validation - empty query parameter should return 400"
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid limit (too large)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1/search/suggestions?q=test&limit=500",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"search",
+								"suggestions"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "test"
+								},
+								{
+									"key": "limit",
+									"value": "500"
+								}
+							]
+						},
+						"description": "Test validation - limit over 100 should return 400"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5082/api",
+			"type": "string"
+		}
+	]
+}
