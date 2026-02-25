@@ -3,7 +3,6 @@
 [![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![ASP.NET Core](https://img.shields.io/badge/ASP.NET%20Core-8.0-512BD4)](https://docs.microsoft.com/aspnet/core)
 [![SQL Server](https://img.shields.io/badge/SQL%20Server-FTS-CC2927?logo=microsoft-sql-server)](https://www.microsoft.com/sql-server)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 Full-text search microservice for the Knowledge Management Platform (KMP) providing search capabilities against document metadata.
 
